@@ -1,33 +1,73 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useReducer, useState } from 'preact/hooks'
 import preactLogo from './assets/preact.svg'
 import viteLogo from '/vite.svg'
 import './app.css'
+import { Fragment } from 'preact/jsx-runtime';
+import * as types from "./types"
+import {PageStore} from "./stores"
 
 export function App() {
-  const [count, setCount] = useState(0)
+  const [pageStoreState, pageStoreDispatch] = useReducer(PageStore.Reducer, PageStore.EmptyState)
+
+  const pages = pageStoreState.pages as types.Page[];
+
+  const createPage = (title: string) => {
+    let page = new types.Page();
+    page.title = title;
+    pageStoreDispatch({ type: PageStore.ActionTypes.ADD_PAGE, payload: page })
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://preactjs.com" target="_blank">
-          <img src={preactLogo} class="logo preact" alt="Preact logo" />
-        </a>
-      </div>
-      <h1>Vite + Preact</h1>
-      <div class="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/app.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p class="read-the-docs">
-        Click on the Vite and Preact logos to learn more
-      </p>
-    </>
+    <div>
+      <PageForm createPage={ createPage } />
+      <h1>List of pages</h1>
+      {pages.map((page) => <PageComponent page={page} />)}
+      {pages.length === 0 && <div>No pages</div>}
+    </div>
+  )
+}
+
+interface PageComponentProps {
+  page: types.Page;
+}
+
+function PageComponent(props: PageComponentProps) {
+  const page = props.page;
+
+  return (
+    <Fragment>
+      <div>ID: { page.id }</div>
+      <div>Title: { page.title }</div>
+      <div>Proper Title: { page.properTitle() }</div>
+      <hr/>
+    </Fragment>
+  )
+}
+
+interface PageFormProps {
+  createPage: (title: string) => void;
+}
+
+function PageForm(props: PageFormProps) {
+  const [title, setTitle] = useState("");
+
+  const submit = (e: Event) => {
+    e.preventDefault();
+    props.createPage(title);
+    setTitle("")
+  }
+
+  return (
+    <div>
+      <h1>Page Form</h1>
+      <form onSubmit={submit}>
+        <label>
+          Title:
+          <input type="text" value={title} onInput={(e) => setTitle((e.target as HTMLInputElement).value)} />
+        </label>
+        <br/>
+        <input type="submit" value="Submit" disabled={ title === "" }/>
+      </form>
+    </div>
   )
 }
